@@ -38,6 +38,7 @@
     "node-emoji": "^1.8.1",
     "rxjs": "^6.3.1",
     "rxjs-compat": "^6.3.1",
+    "typescript": "^3.2.4",
     "zone.js": "~0.8.26"
   },
   "devDependencies": {
@@ -60,7 +61,6 @@
     "protractor": "^5.4.0",
     "ts-node": "~5.0.1",
     "tslint": "^5.11.0",
-    "tslint-eslint-rules": "^5.4.0",
-    "typescript": "^3.2.4"
+    "tslint-eslint-rules": "^5.4.0"
   }
 }

@@ -18,19 +18,18 @@ function getColorizedString(str: any, color: string) {
 }
 
 function colorizeArgsByLogLevel(args: any[], logLevel: 'log' | 'error') {
-  return args
-    .map((arg) => {
-      if (typeof arg === 'object') {
-        // turn the object to a string so we
-        // can log all the properties and color it
-        const argStr = arg instanceof Error ? arg.stack : JSON.stringify(arg);
-        return getColorizedString(argStr, logLevel === 'error' ? 'red' : 'green');
-      } else {
-        // coerce to string to color
-        arg += '';
-        return getColorizedString(arg, logLevel === 'error' ? 'red' : 'magenta');
-      }
-    });
+  return args.map(arg => {
+    if (typeof arg === 'object') {
+      // turn the object to a string so we
+      // can log all the properties and color it
+      const argStr = arg instanceof Error ? arg.stack : JSON.stringify(arg);
+      return getColorizedString(argStr, logLevel === 'error' ? 'red' : 'green');
+    } else {
+      // coerce to string to color
+      arg += '';
+      return getColorizedString(arg, logLevel === 'error' ? 'red' : 'magenta');
+    }
+  });
 }
 
 const logger = {
@@ -39,15 +38,17 @@ const logger = {
     // call either console.log or noop here
     // with the console object as the context
     // and the new colored args :)
-    consoleLog.apply(console, args);
+    console.log(console, args);
+    //consoleLog.apply(console, args);
   },
   error(...args: any[]) {
     args = colorizeArgsByLogLevel(args, 'error');
     // call either console.log or noop here
     // with the console object as the context
     // and the new colored args :)
-    consoleError.apply(console, args);
-  },
+    // consoleError.apply(console, args);
+    console.error(console, args);
+  }
 };
 
 export default logger;

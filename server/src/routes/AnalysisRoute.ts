@@ -15,16 +15,22 @@ export class AnalysisRoute {
   }
 
   private routes(): void {
-    this.router.get('/classificationSummary', (req: Request, res: Response) => {
-      this.cloudantDAO.classificationSummary((err, result) => {
-        if (err) {
-          logger.log(err);
-          res.status(500).send(err);
-        } else {
-          res.status(200).send(result);
-        }
+    this.router.get('/', (req: Request, res: Response) => {
+      res.status(200).send({
+        message: 'Hello There! Welcome to the Cognitive Social App!'
       });
     });
+
+    // this.router.get('/classificationSummary', (req: Request, res: Response) => {
+    //   this.cloudantDAO.classificationSummary((err, result) => {
+    //     if (err) {
+    //       logger.log(err);
+    //       res.status(500).send(err);
+    //     } else {
+    //       res.status(200).send(result);
+    //     }
+    //   });
+    // });
 
     this.router.get('/sentimentOverTime', (req: Request, res: Response) => {
       this.cloudantDAO.sentimentOvertime((err, result) => {

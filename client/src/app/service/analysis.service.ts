@@ -4,17 +4,12 @@ import { Observable } from 'rxjs/Observable';
 import { environment } from '../../environments/environment';
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: 'root'
 })
 export class AnalysisService {
-
   uri = environment.api_url + '/analysis';
 
-  constructor(private http: HttpClient) { }
-
-  getClassificatonSummary(): Observable<any> {
-    return this.http.get(`${this.uri}/classificationSummary`);
-  }
+  constructor(private http: HttpClient) {}
 
   getSentimentOverTime(): Observable<any> {
     return this.http.get(`${this.uri}/sentimentOverTime`);
@@ -38,9 +33,7 @@ export class AnalysisService {
 
   getPostsByDate(limit, skip): Observable<any> {
     return this.http.get(`${this.uri}/listByPostDate`, {
-      params: new HttpParams()
-      .set('skip', skip)
-      .set('limit', limit),
+      params: new HttpParams().set('skip', skip).set('limit', limit)
     });
   }
 }

@@ -36,7 +36,7 @@ declare namespace CRMModel {
     filterContaining: string;
     filterFrom: string;
     processRetweets: boolean;
-    workspaceId: string;
+    // workspaceId: string;
   }
 
   interface CloudantOptions {

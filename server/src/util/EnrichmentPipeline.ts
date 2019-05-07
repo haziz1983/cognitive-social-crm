@@ -4,9 +4,9 @@ import * as winston from 'winston';
 import config from '../config';
 
 export class EnrichmentPipeline {
-  public static getInstance(workspaceId: string) {
+  public static getInstance() {
     if (this.enrichmentPipeline === undefined) {
-      this.enrichmentPipeline = new EnrichmentPipeline(workspaceId);
+      this.enrichmentPipeline = new EnrichmentPipeline();
     }
     return this.enrichmentPipeline;
   }
@@ -22,8 +22,8 @@ export class EnrichmentPipeline {
 
   private nlu: watson.NaturalLanguageUnderstandingV1;
   private toneAnalyzer: watson.ToneAnalyzerV3;
-  private conversation: watson.ConversationV1;
-  private workspaceId: string;
+  // private conversation: watson.ConversationV1;
+  // private workspaceId: string;
 
   private nluParams: any = {
     features: {
@@ -44,7 +44,7 @@ export class EnrichmentPipeline {
 
   private toneParams: any = {};
 
-  private constructor(workspaceId: string) {
+  private constructor() {
     this.nlu = new watson.NaturalLanguageUnderstandingV1({
       version: '2018-03-16'
     });
@@ -53,11 +53,11 @@ export class EnrichmentPipeline {
       version: '2017-09-21'
     });
 
-    this.conversation = new watson.ConversationV1({
-      version: '2018-07-10'
-    });
+    // this.conversation = new watson.ConversationV1({
+    //   version: '2018-07-10'
+    // });
 
-    this.workspaceId = workspaceId;
+    // this.workspaceId = workspaceId;
   }
 
   public enrich(text: string) {
@@ -65,8 +65,8 @@ export class EnrichmentPipeline {
       try {
         const enrichmentPromises = [
           this.nluEnrichment(text),
-          this.toneEnrichment(text),
-          this.conversationEnrichment(text)
+          this.toneEnrichment(text)
+          // this.conversationEnrichment(text)
         ];
         Promise.all(enrichmentPromises)
           .then(enrichments => {
@@ -122,28 +122,28 @@ export class EnrichmentPipeline {
     });
   }
 
-  public conversationEnrichment(text: string) {
-    return new Promise((resolve, reject) => {
-      try {
-        const conversationParams: any = {
-          workspace_id: this.workspaceId,
-          input: {
-            text
-          }
-        };
-        this.conversation.message(
-          conversationParams,
-          (err: any, success: any) => {
-            if (err) {
-              this.LOGGER.error('Conversation: ' + err);
-              return reject('Conversation: ' + err);
-            }
-            resolve({ intents: success.intents });
-          }
-        );
-      } catch (err) {
-        reject(err);
-      }
-    });
-  }
+  // public conversationEnrichment(text: string) {
+  //   return new Promise((resolve, reject) => {
+  //     try {
+  //       const conversationParams: any = {
+  //         workspace_id: this.workspaceId,
+  //         input: {
+  //           text
+  //         }
+  //       };
+  //       this.conversation.message(
+  //         conversationParams,
+  //         (err: any, success: any) => {
+  //           if (err) {
+  //             this.LOGGER.error('Conversation: ' + err);
+  //             return reject('Conversation: ' + err);
+  //           }
+  //           resolve({ intents: success.intents });
+  //         }
+  //       );
+  //     } catch (err) {
+  //       reject(err);
+  //     }
+  //   });
+  // }
 }

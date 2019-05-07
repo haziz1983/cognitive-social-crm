@@ -31,7 +31,7 @@ export class DashboardComponent implements OnInit {
   public positiveInsightStyle = 'insight-box--positive';
   public negativeInsightStyle = 'insight-box--negative';
   public responseAssignmentChart: Chart;
-  public classificationSummaryBarChart: Chart;
+  // public classificationSummaryBarChart: Chart;
   public sentimentOverTimeLineChart: Chart;
   public emotionalToneOverTimeChart: Chart;
   public keywordCloud: CloudData[] = [
@@ -53,12 +53,10 @@ export class DashboardComponent implements OnInit {
     };
 
     this.loadKeywordSummary();
-    this.loadTweetAllocation();
     this.loadRecentTweets();
     this.loadSentimentSummary();
     this.loadSentimentTrend();
     this.sleep(2000).then(() => {
-      //this.loadClassificationSummary();
       this.loadSentimentOverTime();
       this.loadEmotionalToneOvertime();
     });
@@ -127,102 +125,10 @@ export class DashboardComponent implements OnInit {
     });
   }
 
-  loadTweetAllocation() {
-    this.analysisService
-      .getClassificatonSummary()
-      .subscribe(classifications => {
-        const allocation = {
-          Watson: 0,
-          Agent: 0
-        };
-        let i = 0;
-        for (const c of classifications) {
-          if (this.uiConfiguration.ALLOCATION_TO_WATSON.indexOf(c.key) > -1) {
-            allocation.Watson = c.value;
-          } else {
-            allocation.Agent += c.value;
-          }
-          i++;
-        }
-        this.updateAllocationChart(allocation);
-      });
-  }
-
-  updateAllocationChart(tweetAllocation) {
-    this.responseAssignmentChart = new Chart('responseAssignmentChart', {
-      type: 'doughnut',
-      data: {
-        labels: [
-          this.uiConfiguration.WATSON_LABEL,
-          this.uiConfiguration.AGENT_LABEL
-        ],
-        datasets: [
-          {
-            label: 'Response Assignment',
-            backgroundColor: ['#3e95cd', '#8e5ea2'],
-            data: [tweetAllocation.Watson, tweetAllocation.Agent]
-          }
-        ]
-      },
-      options: {
-        title: {
-          display: true,
-          text: 'Tweets Response Assignment'
-        }
-      }
-    });
-  }
-
-  loadClassificationSummary() {
-    this.analysisService
-      .getClassificatonSummary()
-      .subscribe(classifications => {
-        const x = [];
-        const y = [];
-        for (const cn of classifications) {
-          x.push(cn.key);
-          y.push(cn.value);
-        }
-        this.updateClassificationChart(x, y);
-      });
-  }
-
   loadSentimentOverTime() {
     this.analysisService.getSentimentOverTime().subscribe(sentiments => {
       this.updateSentimentOvertimeChart(sentiments);
     });
-  }
-
-  updateClassificationChart(x, y) {
-    this.classificationSummaryBarChart = new Chart(
-      'classificationSummaryBarChart',
-      {
-        type: 'bar',
-        data: {
-          labels: x,
-          datasets: [
-            {
-              label: 'Tweets',
-              backgroundColor: [
-                '#3e95cd',
-                '#8e5ea2',
-                '#3cba9f',
-                '#e8c3b9',
-                '#c45850'
-              ],
-              data: y
-            }
-          ]
-        },
-        options: {
-          legend: { display: false },
-          title: {
-            display: true,
-            text: 'Live Tweets Classification'
-          }
-        }
-      }
-    );
   }
 
   updateSentimentOvertimeChart(sentiments) {

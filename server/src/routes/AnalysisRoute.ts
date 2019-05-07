@@ -21,17 +21,6 @@ export class AnalysisRoute {
       });
     });
 
-    // this.router.get('/classificationSummary', (req: Request, res: Response) => {
-    //   this.cloudantDAO.classificationSummary((err, result) => {
-    //     if (err) {
-    //       logger.log(err);
-    //       res.status(500).send(err);
-    //     } else {
-    //       res.status(200).send(result);
-    //     }
-    //   });
-    // });
-
     this.router.get('/sentimentOverTime', (req: Request, res: Response) => {
       this.cloudantDAO.sentimentOvertime((err, result) => {
         if (err) {

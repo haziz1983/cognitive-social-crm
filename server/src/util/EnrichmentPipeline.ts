@@ -4,7 +4,6 @@ import * as winston from 'winston';
 import config from '../config';
 
 export class EnrichmentPipeline {
-
   public static getInstance(workspaceId: string) {
     if (this.enrichmentPipeline === undefined) {
       this.enrichmentPipeline = new EnrichmentPipeline(workspaceId);
@@ -17,7 +16,8 @@ export class EnrichmentPipeline {
   private LOGGER = winston.createLogger({
     level: config.log_level,
     transports: [
-      new (winston.transports.Console)({ format: winston.format.simple() })],
+      new winston.transports.Console({ format: winston.format.simple() })
+    ]
   });
 
   private nlu: watson.NaturalLanguageUnderstandingV1;
@@ -32,29 +32,29 @@ export class EnrichmentPipeline {
       entities: {
         emotion: false,
         sentiment: false,
-        limit: 2,
+        limit: 2
       },
       keywords: {
         emotion: false,
         sentiment: false,
-        limit: 2,
-      },
-    },
+        limit: 2
+      }
+    }
   };
 
   private toneParams: any = {};
 
   private constructor(workspaceId: string) {
     this.nlu = new watson.NaturalLanguageUnderstandingV1({
-      version: '2018-03-16',
+      version: '2018-03-16'
     });
 
     this.toneAnalyzer = new watson.ToneAnalyzerV3({
-      version: '2017-09-21',
+      version: '2017-09-21'
     });
 
     this.conversation = new watson.ConversationV1({
-      version: '2018-07-10',
+      version: '2018-07-10'
     });
 
     this.workspaceId = workspaceId;
@@ -66,18 +66,20 @@ export class EnrichmentPipeline {
         const enrichmentPromises = [
           this.nluEnrichment(text),
           this.toneEnrichment(text),
-          this.conversationEnrichment(text),
+          this.conversationEnrichment(text)
         ];
-        Promise.all(enrichmentPromises).then((enrichments) => {
-          const response: { [index: string]: any } = {};
-          for (const e of enrichments) {
-            const ets = e as { [index: string]: any };
-            response[Object.keys(e)[0]] = ets[Object.keys(e)[0]];
-          }
-          resolve(response);
-        }).catch((err) => {
-          reject(err);
-        });
+        Promise.all(enrichmentPromises)
+          .then(enrichments => {
+            const response: { [index: string]: any } = {};
+            for (const e of enrichments) {
+              const ets = e as { [index: string]: any };
+              response[Object.keys(e)[0]] = ets[Object.keys(e)[0]];
+            }
+            resolve(response);
+          })
+          .catch(err => {
+            reject(err);
+          });
       } catch (err) {
         reject(err);
       }
@@ -126,20 +128,22 @@ export class EnrichmentPipeline {
         const conversationParams: any = {
           workspace_id: this.workspaceId,
           input: {
-            text,
-          },
-        };
-        this.conversation.message(conversationParams, (err: any, success: any) => {
-          if (err) {
-            this.LOGGER.error('Conversation: ' + err);
-            return reject('Conversation: ' + err);
+            text
           }
-          resolve({ intents: success.intents });
-        });
+        };
+        this.conversation.message(
+          conversationParams,
+          (err: any, success: any) => {
+            if (err) {
+              this.LOGGER.error('Conversation: ' + err);
+              return reject('Conversation: ' + err);
+            }
+            resolve({ intents: success.intents });
+          }
+        );
       } catch (err) {
         reject(err);
       }
     });
   }
-
 }

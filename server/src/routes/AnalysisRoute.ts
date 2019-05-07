@@ -3,8 +3,9 @@ import { Request, Response } from 'express';
 import logger from '../util/Logger';
 import { CloudantDAO } from '../dao/CloudantDAO';
 
+const LOGIN_URL = '/ibm/bluemix/appid/login';
+const CALLBACK_URL = '/ibm/bluemix/appid/callback';
 export class AnalysisRoute {
-
   public router: express.Router = express.Router();
   private cloudantDAO: CloudantDAO;
 
@@ -14,12 +15,6 @@ export class AnalysisRoute {
   }
 
   private routes(): void {
-    this.router.get('/', (req: Request, res: Response) => {
-      res.status(200).send({
-        message: 'Hello Watson!',
-      });
-    });
-
     this.router.get('/classificationSummary', (req: Request, res: Response) => {
       this.cloudantDAO.classificationSummary((err, result) => {
         if (err) {

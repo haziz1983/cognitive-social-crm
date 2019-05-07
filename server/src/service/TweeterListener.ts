@@ -5,14 +5,20 @@ import * as Twit from 'twit';
 import * as winston from 'winston';
 import config from '../config';
 import { CloudantDAO } from '../dao/CloudantDAO';
-import { TwitterOptions, TwitterResponse, CloudantOptions } from '../model/CRMModel';
+import {
+  TwitterOptions,
+  TwitterResponse,
+  CloudantOptions
+} from '../model/CRMModel';
 import { EnrichmentPipeline } from '../util/EnrichmentPipeline';
 import { OutputFormatter } from '../util/OutputFormatter';
 import logger from '../util/Logger';
 
 export class TweeterListener {
-
-  public static getInstance(options: TwitterOptions, enrichmentPipeline: EnrichmentPipeline) {
+  public static getInstance(
+    options: TwitterOptions,
+    enrichmentPipeline: EnrichmentPipeline
+  ) {
     if (this.tweeterListener === undefined) {
       this.tweeterListener = new TweeterListener(options, enrichmentPipeline);
     }
@@ -33,10 +39,14 @@ export class TweeterListener {
   private LOGGER = winston.createLogger({
     level: config.log_level,
     transports: [
-      new (winston.transports.Console)({ format: winston.format.simple() })],
+      new winston.transports.Console({ format: winston.format.simple() })
+    ]
   });
 
-  private constructor(options: TwitterOptions, enrichmentPipeline: EnrichmentPipeline) {
+  private constructor(
+    options: TwitterOptions,
+    enrichmentPipeline: EnrichmentPipeline
+  ) {
     this.options = options;
     this.options.listenFor = config.listenFor || '';
     this.options.listenTo = config.listenTo || '';
@@ -54,7 +64,7 @@ export class TweeterListener {
       errors: 0,
       last_received_at: undefined,
       last_error: undefined,
-      state: 'initialized',
+      state: 'initialized'
     };
 
     // If the max isn't specified in the options, then set it to unlimited for listen.  100 for search.
@@ -75,7 +85,7 @@ export class TweeterListener {
     twitOptions.consumer_secret = config.consumer_secret || '';
     twitOptions.access_token = config.access_token;
     twitOptions.access_token_secret = config.access_token_secret;
-    twitOptions.timeout_ms = 60 * 1000;  // optional HTTP request timeout to apply to all requests.
+    twitOptions.timeout_ms = 60 * 1000; // optional HTTP request timeout to apply to all requests.
     this.twitterClient = new Twit(twitOptions);
 
     this.LOGGER.info('Tweet listener initialized.');
@@ -88,13 +98,16 @@ export class TweeterListener {
     return new Promise((resolve, reject) => {
       try {
         if (this.options.listenTo) {
-          this.lookupUsers(this.options.listenTo).then((userIds) => {
-            this.options.userIds = userIds as string;
-            resolve();
-          }, (err) => {
-            this.LOGGER.error(err);
-            reject(err);
-          });
+          this.lookupUsers(this.options.listenTo).then(
+            userIds => {
+              this.options.userIds = userIds as string;
+              resolve();
+            },
+            err => {
+              this.LOGGER.error(err);
+              reject(err);
+            }
+          );
         } else {
           resolve();
         }
@@ -118,11 +131,13 @@ export class TweeterListener {
         // Retrieve the User ID's from Twitter for the requested Screennames
         const twitParams: Twit.Params = {} as Twit.Params;
         twitParams.screen_name = listenTo;
-        this.twitterClient.get('users/lookup', twitParams)
-          .catch((err) => {
+        this.twitterClient
+          .get('users/lookup', twitParams)
+          .catch(err => {
             this.LOGGER.error(err.stack);
             reject(err.stack);
-          }).then((result) => {
+          })
+          .then(result => {
             const promiseRespnose: Twit.PromiseResponse = result as Twit.PromiseResponse;
             if (!(promiseRespnose.resp.statusCode === 200)) {
               return reject('Error while getting user ids');
@@ -143,7 +158,9 @@ export class TweeterListener {
   public startListener() {
     // Check that there isn't a listener already started.
     if (this.status.state === 'started') {
-      this.LOGGER.error('Twitter Listener requested to be started, but there is one already running.');
+      this.LOGGER.error(
+        'Twitter Listener requested to be started, but there is one already running.'
+      );
       return;
     }
     if (this.options.listenTo) {
@@ -215,9 +232,12 @@ export class TweeterListener {
         }
       }
       // Process the tweet if not filtered, but delay the processing 5 seconds if running locally
-      setTimeout(() => {
-        this.processTweet(tweet);
-      }, (config.isLocal ? 0 : 5000));
+      setTimeout(
+        () => {
+          this.processTweet(tweet);
+        },
+        config.isLocal ? 0 : 5000
+      );
     } catch (err) {
       this.LOGGER.error(err);
     }
@@ -225,49 +245,68 @@ export class TweeterListener {
 
   public processTweet(tweet: any) {
     this.LOGGER.debug('Processing Tweet.');
-    this.cloudantDAO.duplicateCheck(tweet).then(() => {
-      // Convert the tweet into a format...
-      this.outputFormatter.formatAsJson(tweet).then((data) => {
-        // Do some enrichment
-        this.enrichmentPromise(data).then((enrichedData) => {
-          // Then save it to something...
-          this.cloudantDAO.saveToCloudant(enrichedData, false).then(() => {
-            this.status.saved++;
-            this.outCount++;
-            // tslint:disable:max-line-length
-            this.LOGGER.debug(this.outCount + ' Tweets processed with a maximum of ' + (this.options.max === -1 ? 'Unlimited' : this.options.max));
-            if (this.options.max > 0 && this.outCount >= this.options.max) {
-              this.LOGGER.debug('>> Maximum saved count was reached, stop listening...');
-              this.stream.stop();
-            }
-          }).catch((err) => {
-            this.LOGGER.error('Error saving to cloudant ' + err);
-          });
-        }).catch((err) => {
-          this.status.lastError = err;
-          this.status.errors++;
-          // If it's not an unsupported text language error, then we pause the listener.
-          // tslint:disable:max-line-length
-          if (err.indexOf('unsupported text language') === -1) {
-            this.LOGGER.debug('An Enrichment error occurred, the listener is being paused for 15 minutes to see if it resolved the problem.');
-            this.pauseListener(15);
-          }
+    this.cloudantDAO
+      .duplicateCheck(tweet)
+      .then(() => {
+        // Convert the tweet into a format...
+        this.outputFormatter.formatAsJson(tweet).then(data => {
+          // Do some enrichment
+          this.enrichmentPromise(data)
+            .then(enrichedData => {
+              // Then save it to something...
+              this.cloudantDAO
+                .saveToCloudant(enrichedData, false)
+                .then(() => {
+                  this.status.saved++;
+                  this.outCount++;
+                  // tslint:disable:max-line-length
+                  this.LOGGER.debug(
+                    this.outCount +
+                      ' Tweets processed with a maximum of ' +
+                      (this.options.max === -1 ? 'Unlimited' : this.options.max)
+                  );
+                  if (
+                    this.options.max > 0 &&
+                    this.outCount >= this.options.max
+                  ) {
+                    this.LOGGER.debug(
+                      '>> Maximum saved count was reached, stop listening...'
+                    );
+                    this.stream.stop();
+                  }
+                })
+                .catch(err => {
+                  this.LOGGER.error('Error saving to cloudant ' + err);
+                });
+            })
+            .catch(err => {
+              this.status.lastError = err;
+              this.status.errors++;
+              // If it's not an unsupported text language error, then we pause the listener.
+              // tslint:disable:max-line-length
+              if (err.indexOf('unsupported text language') === -1) {
+                this.LOGGER.debug(
+                  'An Enrichment error occurred, the listener is being paused for 15 minutes to see if it resolved the problem.'
+                );
+                this.pauseListener(15);
+              }
+            });
         });
+      })
+      .catch(err => {
+        if (err) {
+          this.LOGGER.error('Error checking for duplicate: ' + err);
+          return;
+        }
+        this.LOGGER.error('Tweet is a duplicate');
       });
-    }).catch((err) => {
-      if (err) {
-        this.LOGGER.error('Error checking for duplicate: ' + err);
-        return;
-      }
-      this.LOGGER.error('Tweet is a duplicate');
-    });
   }
 
   public getStatus() {
     if (this.status) {
       return this.status;
     } else {
-      return { status: 'Listner isn\'t started yet.' };
+      return { status: "Listner isn't started yet." };
     }
   }
 
@@ -284,7 +323,10 @@ export class TweeterListener {
       this.status.will_resume_at = pauseDuration.toDate();
       this.stream.stop();
     }
-    this.LOGGER.debug('Listener will resume at ' + pauseDuration.format('dddd, MMMM Do YYYY, h:mm:ss a'));
+    this.LOGGER.debug(
+      'Listener will resume at ' +
+        pauseDuration.format('dddd, MMMM Do YYYY, h:mm:ss a')
+    );
     setTimeout(() => {
       this.startListener();
     }, pauseDuration.diff(now));
@@ -292,12 +334,15 @@ export class TweeterListener {
 
   public enrichmentPromise(data: any) {
     return new Promise((resolve, reject) => {
-      this.enrichmentPipeline.enrich(data.text).then((enrichments) => {
-        data.enrichments = enrichments;
-        resolve(data);
-      }).catch((err) => {
-        reject(err);
-      });
+      this.enrichmentPipeline
+        .enrich(data.text)
+        .then(enrichments => {
+          data.enrichments = enrichments;
+          resolve(data);
+        })
+        .catch(err => {
+          reject(err);
+        });
     });
   }
 
@@ -311,5 +356,4 @@ export class TweeterListener {
       resolve(data);
     });
   }
-
 }

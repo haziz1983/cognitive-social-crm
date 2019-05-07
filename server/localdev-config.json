@@ -1,0 +1,9 @@
+{
+  "clientId": "b3c00f22-ae8a-40ea-a0ae-f29d576daae1",
+  "oauthServerUrl": "https://us-south.appid.cloud.ibm.com/oauth/v4/8c53f71d-04a3-40cb-b279-42ba5645f362",
+  "profilesUrl": "https://us-south.appid.cloud.ibm.com",
+  "secret": "ZTlmNjk3ZDgtNzc3NS00ZWZlLTg1ZWEtZDEyMDJlZThiYWFl",
+  "tenantId": "8c53f71d-04a3-40cb-b279-42ba5645f362",
+  "version": 4,
+  "appidServiceEndpoint": "https://us-south.appid.cloud.ibm.com"
+}

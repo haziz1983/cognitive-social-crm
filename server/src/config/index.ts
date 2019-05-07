@@ -8,7 +8,7 @@ const ANALYSIS_DB: string = 'analysis_db';
 export const ENV = {
   dev: 'development',
   prod: 'production',
-  test: 'testing',
+  test: 'testing'
 };
 
 let config = {
@@ -29,7 +29,15 @@ let config = {
   access_token: process.env.TWITTER_ACCESS_TOKEN,
   access_token_secret: process.env.TWITTER_ACCESS_SECRET,
   max_buffer_size: Number(process.env.MAX_BUFFER_SIZE),
-  isLocal: true,
+  appIdClientId: 'b3c00f22-ae8a-40ea-a0ae-f29d576daae1',
+  appIdOauthServerUrl:
+    'https://us-south.appid.cloud.ibm.com/oauth/v4/8c53f71d-04a3-40cb-b279-42ba5645f362',
+  appIdProfilesUrl: 'https://us-south.appid.cloud.ibm.com',
+  appIdSecret: 'ZTlmNjk3ZDgtNzc3NS00ZWZlLTg1ZWEtZDEyMDJlZThiYWFl',
+  appIdTenantId: '8c53f71d-04a3-40cb-b279-42ba5645f362',
+  appIdVersion: 4,
+  appidServiceEndpoint: 'https://us-south.appid.cloud.ibm.com',
+  isLocal: true
 };
 /*
 if (process.env.NODE_ENV === 'production') {

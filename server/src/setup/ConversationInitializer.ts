@@ -3,26 +3,29 @@ import logger from '../util/Logger';
 import workspace from '../data/SocialCRMWorkspace';
 
 export class ConversationInitializer {
-
   private conversation: watson.AssistantV1;
   private DEFAULT_NAME: string = 'cognitive-social-crm';
 
   constructor() {
     this.conversation = new watson.AssistantV1({
-      version: '2018-02-16',
+      version: '2018-02-16'
     });
   }
 
   public init() {
     return new Promise((resolve, reject) => {
-      const conversationSetupParams = { default_name: this.DEFAULT_NAME, workspace_json: workspace };
+      const conversationSetupParams = {
+        default_name: this.DEFAULT_NAME,
+        workspace_json: workspace
+      };
       this.setupConversationWorkspace(conversationSetupParams)
-                .then((workspaceId) => {
-                  resolve(workspaceId);
-                }).catch((err) => {
-                  logger.error(err);
-                  reject(err);
-                });
+        .then(workspaceId => {
+          resolve(workspaceId);
+        })
+        .catch(err => {
+          logger.error(err);
+          reject(err);
+        });
     });
   }
 
@@ -32,12 +35,16 @@ export class ConversationInitializer {
         let workspaceId: string = '';
         if (err) {
           logger.error('Error during Conversation listWorkspaces(): ', err);
-          reject(new Error('Error. Unable to list workspaces for Conversation: ' + err));
+          reject(
+            new Error(
+              'Error. Unable to list workspaces for Conversation: ' + err
+            )
+          );
         } else {
           const workspaces = data.workspaces;
           let found: boolean = false;
-                    // Find by name, because we probably created it
-                    // earlier (in the if block) and want to use it on restarts.
+          // Find by name, because we probably created it
+          // earlier (in the if block) and want to use it on restarts.
           logger.log('Looking for workspace by name: ', this.DEFAULT_NAME);
           for (let i = 0, size = workspaces.length; i < size; i++) {
             if (workspaces[i].name === this.DEFAULT_NAME) {
@@ -54,7 +61,9 @@ export class ConversationInitializer {
             ws.name = this.DEFAULT_NAME;
             this.conversation.createWorkspace(ws, (error: any, wsResp: any) => {
               if (error) {
-                reject(new Error('Failed to create Conversation workspace: ' + err));
+                reject(
+                  new Error('Failed to create Conversation workspace: ' + err)
+                );
               } else {
                 workspaceId = wsResp.workspace_id;
                 logger.log('Successfully created Conversation workspace');
@@ -70,5 +79,4 @@ export class ConversationInitializer {
       });
     });
   }
-
 }

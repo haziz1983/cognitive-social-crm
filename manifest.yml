@@ -5,7 +5,6 @@ applications:
     memory: 1024M
     instances: 1
     disk_quota: 1024M
-    random-route: true
     timeout: 180
     buildpack: sdk-for-nodejs
     command: npm run start:prod

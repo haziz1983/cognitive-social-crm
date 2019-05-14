@@ -6,6 +6,7 @@ import passport from 'passport';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import config from './config';
+import cfEnv from 'cfenv';
 import { errorHandler } from './middleware/ErrorHandler';
 import { MiddleWare } from './middleware/MiddleWare';
 import { AnalysisRoute } from './routes/AnalysisRoute';
@@ -24,8 +25,56 @@ const isLocal = config.isLocal;
 const LOGIN_URL = '/ibm/bluemix/appid/login';
 const CALLBACK_URL = '/ibm/bluemix/appid/callback';
 
+const UI_BASE_URL = 'http://localhost:4200';
+
 //Loading appId configurations from config file
 const appIdConfig = getLocalConfig();
+
+const app = express();
+app.use(MiddleWare.appMiddleware(app));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(errorHandler);
+app.use(cors({ credentials: true, origin: UI_BASE_URL }));
+configureSecurity();
+
+//Setup express application to use express-session middleware
+// Must be configured with proper session storage for production
+// environments. See https://github.com/expressjs/session for
+// additional documentation
+app.use(
+  session({
+    secret: 'keyboardcat',
+    resave: true,
+    saveUninitialized: true,
+    proxy: true,
+    cookie: {
+      httpOnly: true,
+      secure: !isLocal,
+      maxAge: 600000000
+    }
+  })
+);
+
+// Configure express application to use passportjs
+app.use(passport.initialize());
+app.use(passport.session());
+
+let webAppStrategy = new WebAppStrategy(appIdConfig);
+passport.use(webAppStrategy);
+
+userProfileManager.init(appIdConfig);
+
+// Configure passportjs with user serialization/deserialization. This is required
+// for authenticated session persistence accross HTTP requests. See passportjs docs
+// for additional information http://passportjs.org/docs
+passport.serializeUser(function(user, cb) {
+  cb(null, user);
+});
+
+passport.deserializeUser(function(obj, cb) {
+  cb(null, obj);
+});
 
 function getLocalConfig() {
   let appIdConfig = {
@@ -51,8 +100,6 @@ function getLocalConfig() {
 
 let tweeterListener;
 let cloudantDAO;
-const app = express();
-appConfig();
 
 const twitOptions = {};
 twitOptions.max = -1;
@@ -88,101 +135,60 @@ cloudantDAO
     process.exit(1);
   });
 
-function appConfig() {
-  app.use(MiddleWare.appMiddleware(app));
-  app.use(bodyParser.json());
-  app.use(bodyParser.urlencoded({ extended: false }));
-  app.use(errorHandler);
-  app.use(cors());
-
-  configureSecurity();
-
-  // Setup express application to use express-session middleware
-  app.use(
-    session({
-      secret: '123456',
-      resave: true,
-      saveUninitialized: true,
-      proxy: true,
-      cookie: {
-        httpOnly: true,
-        secure: isLocal
-      }
-    })
-  );
-
-  // Configure express application to use passportjs
-  app.use(passport.initialize());
-  app.use(passport.session());
-
-  //Initializing App ID WebAppStrategy with the credentials
-  //Credentials can be obtained from Service Credentials tab in the App ID Dashboard.
-  let webAppStrategy = new WebAppStrategy(appIdConfig);
-  passport.use(webAppStrategy);
-
-  // Initialize the user attribute Manager
-  userProfileManager.init(appIdConfig);
-
-  // Configure passportjs with user serialization/deserialization. This is required
-  // for authenticated session persistence accross HTTP requests. See passportjs docs
-  // for additional information http://passportjs.org/docs
-  passport.serializeUser(function(user, cb) {
-    cb(null, user);
-  });
-
-  passport.deserializeUser(function(obj, cb) {
-    cb(null, obj);
-  });
-}
-
 function configureSecurity() {
   app.use(helmet());
   app.use(cookieParser());
   app.use(helmet.noCache());
   app.enable('trust proxy');
+  if (!isLocal) {
+    app.use(express_enforces_ssl());
+  }
 }
+
 function tweeterListenerStart() {
   tweeterListener.startListener();
 }
 
+function isLoggedIn(req, res, next) {
+  if (req.session[WebAppStrategy.AUTH_CONTEXT]) {
+    next();
+  } else {
+    res.redirect(UI_BASE_URL);
+  }
+}
+
 function routes(enrichmentPipeline, cloudantDAO) {
-  app.use('/tweets', new TweeterRoute(enrichmentPipeline).router);
-  app.use(
-    '/analysis',
-    passport.authenticate(WebAppStrategy.STRATEGY_NAME),
-    new AnalysisRoute(cloudantDAO).router
-  );
+  app.use('/tweets', isLoggedIn, new TweeterRoute(enrichmentPipeline).router);
+  app.use('/analysis', isLoggedIn, new AnalysisRoute(cloudantDAO).router);
 
+  app.use('/', isLoggedIn);
+
+  // Protected area. If current user is not authenticated - redirect to the login widget will be returned.
+  // In case user is authenticated - a page with current user information will be returned.
   app.get(
-    '/',
-    passport.authenticate(WebAppStrategy.STRATEGY_NAME),
-    (req, res) => {
-      console.log('In root route');
-      res.status(200).send({
-        message: 'Hello There! Welcome to the Cognitive Social App!'
-      });
-    }
-  );
-
-  // this.app.get(
-  //   '/analysis',
-  //   passport.authenticate(WebAppStrategy.STRATEGY_NAME),
-  //   new AnalysisRoute(cloudantDAO).router
-  // );
-
-  // Explicit login endpoint. Will always redirect browser to login widget due to {forceLogin: true}.
-  // If forceLogin is set to false redirect to login widget will not occur of already authenticated users.
-  app.get(
-    LOGIN_URL,
+    '/auth/login',
     passport.authenticate(WebAppStrategy.STRATEGY_NAME, {
-      successRedirect: '/analysis',
-      failureRedirect: LOGIN_URL
+      successRedirect: UI_BASE_URL,
+      forceLogin: true
     })
   );
 
-  app.get('/logout', function(req, res) {
+  app.get('/auth/logout', function(req, res, next) {
     WebAppStrategy.logout(req);
-    res.redirect('/');
+    res.redirect(UI_BASE_URL);
+  });
+
+  app.get('/auth/logged', (req, res) => {
+    let loggedInAs = {};
+    if (req.session[WebAppStrategy.AUTH_CONTEXT]) {
+      loggedInAs['name'] = req.user.name;
+      loggedInAs['email'] = req.user.email;
+    }
+
+    res.send({
+      logged: req.session[WebAppStrategy.AUTH_CONTEXT] ? true : false,
+      loggedInAs: loggedInAs
+    });
   });
 
   // Callback to finish the authorization process. Will retrieve access and identity tokens/
@@ -193,28 +199,8 @@ function routes(enrichmentPipeline, cloudantDAO) {
   app.get(
     CALLBACK_URL,
     passport.authenticate(WebAppStrategy.STRATEGY_NAME, {
-      failureRedirect: '/error',
-      failureFlash: true
+      allowAnonymousLogin: true
     })
   );
 }
-
-function storeRefreshTokenInCookie(req, res, next) {
-  if (
-    req.session[WebAppStrategy.AUTH_CONTEXT] &&
-    req.session[WebAppStrategy.AUTH_CONTEXT].refreshToken
-  ) {
-    const refreshToken = req.session[WebAppStrategy.AUTH_CONTEXT].refreshToken;
-    /* An example of storing user's refresh-token in a cookie with expiration of a month */
-    res.cookie('refreshToken', refreshToken, {
-      maxAge: 1000 * 60 * 60 * 24 * 30 /* 30 days */
-    });
-  }
-  next();
-}
-
-function isLoggedIn(req) {
-  return req.session[WebAppStrategy.AUTH_CONTEXT];
-}
-
 export default app;

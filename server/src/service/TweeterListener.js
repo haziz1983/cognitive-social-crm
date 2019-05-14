@@ -73,9 +73,20 @@ export class TweeterListener {
     twitOptions.access_token = config.access_token;
     twitOptions.access_token_secret = config.access_token_secret;
     twitOptions.timeout_ms = 60 * 1000; // optional HTTP request timeout to apply to all requests.
-    this.twitterClient = new Twit(twitOptions);
 
-    this.LOGGER.info('Tweet listener initialized.');
+    if (
+      !twitOptions.consumer_key === '' ||
+      twitOptions.consumer_secret === '' ||
+      twitOptions.access_token === '' ||
+      twitOptions.access_token_secret === ''
+    ) {
+      this.twitterClient = null;
+      this.status.state = 'not initialized';
+      this.LOGGER.info('Tweet listener is not initialized.');
+    } else {
+      this.twitterClient = new Twit(twitOptions);
+      this.LOGGER.info('Tweet listener initialized.');
+    }
   }
 
   /**
@@ -83,24 +94,30 @@ export class TweeterListener {
    */
   init() {
     return new Promise((resolve, reject) => {
-      try {
-        if (this.options.listenTo) {
-          this.lookupUsers(this.options.listenTo).then(
-            userIds => {
-              this.options.userIds = userIds;
-              resolve();
-            },
-            err => {
-              this.LOGGER.error(err);
-              reject(err);
-            }
-          );
-        } else {
-          resolve();
+      if (this.twitterClient !== null) {
+        try {
+          if (this.options.listenTo) {
+            this.lookupUsers(this.options.listenTo).then(
+              userIds => {
+                this.options.userIds = userIds;
+                resolve();
+              },
+              err => {
+                this.LOGGER.error(err);
+                reject(err);
+              }
+            );
+          } else {
+            resolve();
+          }
+        } catch (err) {
+          this.LOGGER.error(err);
+          reject(err);
         }
-      } catch (err) {
-        this.LOGGER.error(err);
-        reject(err);
+      } else {
+        resolve({
+          status: 'Twitter Client cannot be initialized. Using Sample Data'
+        });
       }
     });
   }
@@ -148,6 +165,9 @@ export class TweeterListener {
       this.LOGGER.error(
         'Twitter Listener requested to be started, but there is one already running.'
       );
+      return;
+    }
+    if (this.status.state === 'not initialized') {
       return;
     }
     if (this.options.listenTo) {

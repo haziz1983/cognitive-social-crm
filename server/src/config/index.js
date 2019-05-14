@@ -29,11 +29,11 @@ let config = {
   access_token: process.env.TWITTER_ACCESS_TOKEN,
   access_token_secret: process.env.TWITTER_ACCESS_SECRET,
   max_buffer_size: Number(process.env.MAX_BUFFER_SIZE),
-  appIdClientId: 'b3c00f22-ae8a-40ea-a0ae-f29d576daae1',
+  appIdClientId: 'a069d077-0f1d-47ff-a1e5-890631a51a7f',
   appIdOauthServerUrl:
     'https://us-south.appid.cloud.ibm.com/oauth/v4/8c53f71d-04a3-40cb-b279-42ba5645f362',
   appIdProfilesUrl: 'https://us-south.appid.cloud.ibm.com',
-  appIdSecret: 'ZTlmNjk3ZDgtNzc3NS00ZWZlLTg1ZWEtZDEyMDJlZThiYWFl',
+  appIdSecret: 'NGNjMTVhZTktZjRjYy00ODVkLWJkMDAtZDQ1ZDhhMmI0ZTdk',
   appIdTenantId: '8c53f71d-04a3-40cb-b279-42ba5645f362',
   appIdVersion: 4,
   appidServiceEndpoint: 'https://us-south.appid.cloud.ibm.com',

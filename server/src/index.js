@@ -6,7 +6,6 @@ import passport from 'passport';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import config from './config';
-import cfEnv from 'cfenv';
 import { errorHandler } from './middleware/ErrorHandler';
 import { MiddleWare } from './middleware/MiddleWare';
 import { AnalysisRoute } from './routes/AnalysisRoute';
@@ -77,6 +76,9 @@ passport.deserializeUser(function(obj, cb) {
 });
 
 function getLocalConfig() {
+  if (!config.isLocal) {
+    return;
+  }
   let appIdConfig = {
     clientId: config.appIdClientId,
     tenantId: config.appIdTenantId,
@@ -150,18 +152,35 @@ function tweeterListenerStart() {
 }
 
 function isLoggedIn(req, res, next) {
+  console.log(JSON.stringify(req.session));
   if (req.session[WebAppStrategy.AUTH_CONTEXT]) {
     next();
   } else {
-    res.redirect(UI_BASE_URL);
+    res.redirect('/auth/login');
   }
 }
 
 function routes(enrichmentPipeline, cloudantDAO) {
-  app.use('/tweets', isLoggedIn, new TweeterRoute(enrichmentPipeline).router);
-  app.use('/analysis', isLoggedIn, new AnalysisRoute(cloudantDAO).router);
+  //CORS middleware
+  // var corsMiddleware = function(req, res, next) {
+  //   res.header('Access-Control-Allow-Origin', '*'); //replace localhost with actual host
+  //   res.header(
+  //     'Access-Control-Allow-Methods',
+  //     'OPTIONS, GET, PUT, PATCH, POST, DELETE'
+  //   );
+  //   res.header(
+  //     'Access-Control-Allow-Headers',
+  //     'Content-Type, X-Requested-With, Authorization'
+  //   );
 
-  app.use('/', isLoggedIn);
+  //   next();
+  // };
+  // app.use(corsMiddleware);
+
+  // app.use('/api/*', isLoggedIn);
+
+  app.use('/tweets/*', isLoggedIn, new TweeterRoute(enrichmentPipeline).router);
+  app.use('/analysis/*', isLoggedIn, new AnalysisRoute(cloudantDAO).router);
 
   // Protected area. If current user is not authenticated - redirect to the login widget will be returned.
   // In case user is authenticated - a page with current user information will be returned.
@@ -176,6 +195,13 @@ function routes(enrichmentPipeline, cloudantDAO) {
   app.get('/auth/logout', function(req, res, next) {
     WebAppStrategy.logout(req);
     res.redirect(UI_BASE_URL);
+  });
+
+  app.get('/token', function(req, res) {
+    //return the token data
+    res.render('token', {
+      tokens: JSON.stringify(req.session[WebAppStrategy.AUTH_CONTEXT])
+    });
   });
 
   app.get('/auth/logged', (req, res) => {
@@ -202,5 +228,20 @@ function routes(enrichmentPipeline, cloudantDAO) {
       allowAnonymousLogin: true
     })
   );
+
+  function storeRefreshTokenInCookie(req, res, next) {
+    if (
+      req.session[WebAppStrategy.AUTH_CONTEXT] &&
+      req.session[WebAppStrategy.AUTH_CONTEXT].refreshToken
+    ) {
+      const refreshToken =
+        req.session[WebAppStrategy.AUTH_CONTEXT].refreshToken;
+      /* An example of storing user's refresh-token in a cookie with expiration of a month */
+      res.cookie('refreshToken', refreshToken, {
+        maxAge: 1000 * 60 * 60 * 24 * 30 /* 30 days */
+      });
+    }
+    next();
+  }
 }
 export default app;

@@ -12,27 +12,38 @@ export class AnalysisService {
   constructor(private http: HttpClient) {}
 
   getSentimentOverTime(): Observable<any> {
-    return this.http.get(`${this.uri}/sentimentOverTime`);
+    return this.http.get(`${this.uri}/sentimentOverTime`, {
+      withCredentials: true // <=========== important!
+    });
   }
 
   getSentimentTrend(): Observable<any> {
-    return this.http.get(`${this.uri}/sentimentTrend`);
+    return this.http.get(`${this.uri}/sentimentTrend`, {
+      withCredentials: true // <=========== important!
+    });
   }
 
   getSentimentSummary(): Observable<any> {
-    return this.http.get(`${this.uri}/sentimentSummary`);
+    return this.http.get(`${this.uri}/sentimentSummary`, {
+      withCredentials: true // <=========== important!
+    });
   }
 
   getKeywordsSummary(): Observable<any> {
-    return this.http.get(`${this.uri}/keywordsSummary`);
+    return this.http.get(`${this.uri}/keywordsSummary`, {
+      withCredentials: true // <=========== important!
+    });
   }
 
   getEmotionalToneOverTime(): Observable<any> {
-    return this.http.get(`${this.uri}/emotionalToneOverTime`);
+    return this.http.get(`${this.uri}/emotionalToneOverTime`, {
+      withCredentials: true // <=========== important!
+    });
   }
 
   getPostsByDate(limit, skip): Observable<any> {
     return this.http.get(`${this.uri}/listByPostDate`, {
+      withCredentials: true,
       params: new HttpParams().set('skip', skip).set('limit', limit)
     });
   }

@@ -179,9 +179,16 @@ function routes(enrichmentPipeline, cloudantDAO) {
 
   // app.use('/api/*', isLoggedIn);
 
-  app.use('/tweets/*', isLoggedIn, new TweeterRoute(enrichmentPipeline).router);
-  app.use('/analysis/*', isLoggedIn, new AnalysisRoute(cloudantDAO).router);
+  app.use('/tweets', isLoggedIn, new TweeterRoute(enrichmentPipeline).router);
+  app.use('/analysis', isLoggedIn, new AnalysisRoute(cloudantDAO).router);
 
+  app.use('/analysis/sentimentOverTime', isLoggedIn);
+  app.use('/analysis/sentimentTrend', isLoggedIn);
+  app.use('/analysis/sentimentSummary', isLoggedIn);
+  app.use('/analysis/keywordsSummary', isLoggedIn);
+  app.use('/analysis/emotionalToneOvertime', isLoggedIn);
+  app.use('/analysis/listByPostDate', isLoggedIn);
+  app.use('/tweets/status', isLoggedIn);
   // Protected area. If current user is not authenticated - redirect to the login widget will be returned.
   // In case user is authenticated - a page with current user information will be returned.
   app.get(

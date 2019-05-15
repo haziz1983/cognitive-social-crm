@@ -3,8 +3,6 @@ import express from 'express';
 import logger from '../util/Logger';
 // import { CloudantDAO } from '../dao/CloudantDAO';
 
-const LOGIN_URL = '/ibm/bluemix/appid/login';
-const CALLBACK_URL = '/ibm/bluemix/appid/callback';
 export class AnalysisRoute {
   router = express.Router();
   cloudantDAO;

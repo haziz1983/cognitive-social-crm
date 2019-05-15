@@ -194,11 +194,15 @@ function routes(enrichmentPipeline, cloudantDAO) {
   app.get(
     '/auth/login',
     passport.authenticate(WebAppStrategy.STRATEGY_NAME, {
-      successRedirect: UI_BASE_URL,
+      successRedirect: "http://localhost:4200/analysis",
       forceLogin: true
     })
   );
-
+// Explicit login endpoint. Will always redirect browser to login widget due to {forceLogin: true}.
+// If forceLogin is set to false redirect to login widget will not occur of already authenticated users.
+app.get(LOGIN_URL, passport.authenticate(WebAppStrategy.STRATEGY_NAME, {
+  forceLogin: true
+}));
   app.get('/auth/logout', function(req, res, next) {
     WebAppStrategy.logout(req);
     res.redirect(UI_BASE_URL);

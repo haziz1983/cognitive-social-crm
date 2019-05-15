@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Routes } from '@angular/router';
 import { TweetsComponent } from '../components/tweets/tweets.component';
 import { DashboardComponent } from '../components/dashboard/dashboard.component';
+import { AuthComponent } from '../components/authentication/auth.component';
 
 const routes: Routes = [
   {
@@ -15,7 +16,7 @@ const routes: Routes = [
   },
   {
     path: '',
-    component: DashboardComponent,
+    component: AuthComponent,
   },
 ];
 

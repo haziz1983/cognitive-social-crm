@@ -2,6 +2,7 @@ import { Injectable, Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
+import { of } from 'rxjs'
 
 @Injectable()
 export class AuthService {
@@ -15,7 +16,7 @@ export class AuthService {
         this.userState = data;
       });
     } else {
-      return Observable.of(this.userState);
+      return of(this.userState);
     }
   }
 

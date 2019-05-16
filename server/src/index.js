@@ -14,17 +14,18 @@ import { TweeterListener } from './service/TweeterListener';
 import logger from './util/Logger';
 import { EnrichmentPipeline } from './util/EnrichmentPipeline';
 import { CloudantDAO } from './dao/CloudantDAO';
+import cfEnv from 'cfenv';
+import express_enforces_ssl from 'express-enforces-ssl';
 
 const appID = require('ibmcloud-appid');
 const WebAppStrategy = appID.WebAppStrategy;
 const userProfileManager = appID.UserProfileManager;
-const UnauthorizedException = appID.UnauthorizedException;
-const isLocal = config.isLocal;
+const isLocal = cfEnv.getAppEnv().isLocal;
 
-const LOGIN_URL = '/ibm/bluemix/appid/login';
+const LOGIN_URL = '/auth/login';
 const CALLBACK_URL = '/ibm/bluemix/appid/callback';
 
-const UI_BASE_URL = 'http://localhost:4200';
+const UI_BASE_URL = config.uiBaseUrl;
 
 //Loading appId configurations from config file
 const appIdConfig = getLocalConfig();
@@ -156,7 +157,7 @@ function isLoggedIn(req, res, next) {
   if (req.session[WebAppStrategy.AUTH_CONTEXT]) {
     next();
   } else {
-    res.redirect('/auth/login');
+    res.redirect(LOGIN_URL);
   }
 }
 
@@ -192,7 +193,7 @@ function routes(enrichmentPipeline, cloudantDAO) {
   // Protected area. If current user is not authenticated - redirect to the login widget will be returned.
   // In case user is authenticated - a page with current user information will be returned.
   app.get(
-    '/auth/login',
+    LOGIN_URL,
     passport.authenticate(WebAppStrategy.STRATEGY_NAME, {
       successRedirect: UI_BASE_URL,
       forceLogin: true

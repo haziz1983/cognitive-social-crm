@@ -36,8 +36,7 @@ let config = {
   appIdSecret: 'NGNjMTVhZTktZjRjYy00ODVkLWJkMDAtZDQ1ZDhhMmI0ZTdk',
   appIdTenantId: '8c53f71d-04a3-40cb-b279-42ba5645f362',
   appIdVersion: 4,
-  appidServiceEndpoint: 'https://us-south.appid.cloud.ibm.com',
-  isLocal: true
+  appidServiceEndpoint: 'https://us-south.appid.cloud.ibm.com'
 };
 /*
 if (process.env.NODE_ENV === 'production') {

@@ -3,9 +3,9 @@
   "version": "0.0.1",
   "scripts": {
     "ng": "./node_modules/@angular/cli/bin/ng",
-    "start": "cd node_modules/@angular/cli/bin && ng serve",
+    "start": "cd ./node_modules/@angular/cli/bin && ng serve",
     "build": "./node_modules/@angular/cli/bin/ng build",
-    "build:prod": "cd node_modules/@angular/cli/bin && ng build --prod --aot",
+    "build:prod": "cd ./node_modules/@angular/cli/bin && ng build --prod --aot",
     "test": "./node_modules/@angular/cli/bin/ng test",
     "lint": "./node_modules/@angular/cli/bin/ng lint",
     "e2e": "./node_modules/@angular/cli/bin/ng e2e"

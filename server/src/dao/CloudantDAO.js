@@ -4,16 +4,7 @@ import winston from 'winston';
 import config from '../config';
 import Cloudant from '@cloudant/cloudant';
 const tweets = require('../data/SampleTweets');
-// import { EnrichmentPipeline } from '../util/EnrichmentPipeline';
 import cloudantConfig from '../data/cloudant.config';
-// import {
-//   ClassificationSummary,
-//   EmotionalToneOverTime,
-//   SentimentOverTime,
-//   SentimentSummary,
-//   CloudantOptions
-// } from '../model/CRMModel';
-// import logger from '../util/Logger';
 
 export class CloudantDAO {
   static getInstance(options, enrichmentPipeline) {
@@ -932,45 +923,6 @@ export class CloudantDAO {
     }
   }
 
-  classificationSummary(cb) {
-    try {
-      const params = {
-        group: true
-      };
-      this.cloudantDB.view(
-        this.dbName,
-        'classification-view',
-        params,
-        (err, result) => {
-          if (err) {
-            return cb(err);
-          }
-          let rows = result.rows;
-          rows.sort((a, b) => {
-            if (a.value < b.value) {
-              return 1;
-            }
-            if (a.value > b.value) {
-              return -1;
-            }
-            return 0;
-          });
-          rows = rows.slice(0, 5);
-          const response = [];
-          for (const row of rows) {
-            const cs = {};
-            cs.key = row.key;
-            cs.value = Number(row.value);
-            response.push(cs);
-          }
-          cb(undefined, response);
-        }
-      );
-    } catch (err) {
-      cb(err);
-    }
-  }
-
   emotionalToneOvertime(cb) {
     try {
       const endKey = moment().subtract(7, 'days');
@@ -1036,38 +988,6 @@ export class CloudantDAO {
             }
           }
           cb(undefined, response);
-        }
-      );
-    } catch (err) {
-      cb(err);
-    }
-  }
-
-  entitiesSummary(cb) {
-    try {
-      const params = {
-        group: true
-      };
-      this.cloudantDB.view(
-        this.dbName,
-        'entities-view',
-        params,
-        (err, result) => {
-          if (err) {
-            return cb(err);
-          }
-          const rows = result.rows;
-          rows.sort((a, b) => {
-            if (a.value < b.value) {
-              return 1;
-            }
-            if (a.value > b.value) {
-              return -1;
-            }
-            return 0;
-          });
-          rows.slice(0, 10);
-          cb(undefined, { rows });
         }
       );
     } catch (err) {

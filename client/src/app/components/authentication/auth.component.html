@@ -1,13 +1,27 @@
-<div *ngIf="(userState!==undefined && userState.logged); else not_loggedIn">
-  <h3> Welcome! You are logged in as : </h3>
-  <h3> Name : {{userState.loggedInAs.name}}</h3>
-  <h3> Email : {{userState.loggedInAs.email}}</h3>
-  <h3> Your Cloud Land rewards points balance is : {{cloudLandRewardPoints}}</h3> 
-  
-  <a class="btn btn-lg btn-primary btn-login hideOnStartup" href="http://localhost:3000/auth/logout" id="logoutButton">Logout</a>
+<div
+  *ngIf="userState !== undefined && userState.logged; else not_loggedIn"
+  style="text-align:center;"
+>
+  <h3>Welcome! You are logged in as :</h3>
+  <h4>Name : {{ userState.loggedInAs.name }}</h4>
+  <h4>Email : {{ userState.loggedInAs.email }}</h4>
+
+  <a
+    class="btn btn-md btn-primary btn-login hideOnStartup"
+    href="{{ apiurl }}/auth/logout"
+    id="logoutButton"
+    >Logout</a
+  >
 </div>
 
 <ng-template #not_loggedIn>
-  <h3> You are not logged in. Please sign in</h3>
-  <a style="margin-left: 50%" class="btn btn-lg btn-primary btn-login hideOnStartup" href="http://localhost:3000/auth/login" id="loginbutton">Login</a>
+  <div style="text-align:center;">
+    <h4>You are not logged in. Please sign in.</h4>
+    <a
+      class="btn btn-md btn-primary btn-login hideOnStartup"
+      href="{{ apiurl }}/auth/login"
+      id="loginbutton"
+      >Login</a
+    >
+  </div>
 </ng-template>

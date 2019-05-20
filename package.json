@@ -11,7 +11,7 @@
     "start:client": "cd client && npm start",
     "start:server": "cd server && npm start",
     "start:prod": "export NODE_ENV=production && cd server && node start.js",
-    "build": "\"npm run build:client\"",
+    "build": "npm run build:client",
     "postbuild": "cd dist && mkdir server && cd .. && cp -r server/src/ dist/server && cp server/server.js dist/server && cp server/start.js dist/server && cp server/.env dist/server && cp server/package.json dist/server && cp package.json dist/ && cp client/package.json dist/client",
     "prebuild": "rm -rf dist",
     "build:client": "cd client && npm run build:prod",

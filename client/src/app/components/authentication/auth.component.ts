@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService, UserState } from '../../service/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-cloudland-home',
@@ -11,9 +12,11 @@ export class AuthComponent implements OnInit {
 
   userState: UserState;
   cloudLandRewardPoints: number;
+  apiurl: string;
 
   ngOnInit() {
     this.getUserInfo();
+    this.apiurl = environment.api_url;
   }
 
   getUserInfo() {

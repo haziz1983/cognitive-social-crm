@@ -36,7 +36,7 @@
     "ng2-slim-loading-bar": "^4.0.0",
     "ngx-bootstrap": "^3.0.1",
     "node-emoji": "^1.8.1",
-    "rxjs": "^6.3.1",
+    "rxjs": "^6.5.2",
     "rxjs-compat": "^6.3.1",
     "typescript": "^3.2.4",
     "zone.js": "~0.8.26"

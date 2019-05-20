@@ -31,7 +31,6 @@ export class DashboardComponent implements OnInit {
   public positiveInsightStyle = 'insight-box--positive';
   public negativeInsightStyle = 'insight-box--negative';
   public responseAssignmentChart: Chart;
-  // public classificationSummaryBarChart: Chart;
   public sentimentOverTimeLineChart: Chart;
   public emotionalToneOverTimeChart: Chart;
   public keywordCloud: CloudData[] = [

@@ -35,7 +35,12 @@ app.use(MiddleWare.appMiddleware(app));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(errorHandler);
+
+//Important in development mode:
+// Use cors to add "Allow-Access-Origin" header in requests and responses to Angular server
 app.use(cors({ credentials: true, origin: UI_BASE_URL }));
+
+//configure security on express app
 configureSecurity();
 
 //Setup express application to use express-session middleware
@@ -76,8 +81,9 @@ passport.deserializeUser(function(obj, cb) {
   cb(null, obj);
 });
 
+//Gets App ID credentials from configuration file for local environment
 function getLocalConfig() {
-  if (!config.isLocal) {
+  if (!isLocal) {
     return;
   }
   let appIdConfig = {
@@ -107,11 +113,13 @@ let cloudantDAO;
 const twitOptions = {};
 twitOptions.max = -1;
 
+// initialize enrichment pipeline to analyze the tweets
 const enrichmentPipeline = EnrichmentPipeline.getInstance();
 // app level initialization
 const cloudantOptions = {};
 cloudantOptions.maxBufferSize = config.max_buffer_size;
 
+// initialize cloudant dao to save the analyzed tweets
 cloudantDAO = CloudantDAO.getInstance(cloudantOptions, enrichmentPipeline);
 // setup the database once the enrichment pipeline has been initialized.
 cloudantDAO
@@ -131,6 +139,7 @@ cloudantDAO
         logger.error(err);
       });
 
+    // send the enrichmentPipeline and cloudantDAO instances to the routes function, to be used by the routes in it.
     routes(enrichmentPipeline, cloudantDAO);
   })
   .catch(error => {
@@ -138,6 +147,7 @@ cloudantDAO
     process.exit(1);
   });
 
+//configure the security on the express app
 function configureSecurity() {
   app.use(helmet());
   app.use(cookieParser());
@@ -148,74 +158,76 @@ function configureSecurity() {
   }
 }
 
+//starts listening to new tweets
 function tweeterListenerStart() {
   tweeterListener.startListener();
 }
 
+//middleware that checks the app Id cookie in request session,
+//if found, then proceed to the protected resource
+//if not found, redirects to the login page
 function isLoggedIn(req, res, next) {
-  console.log(JSON.stringify(req.session));
+  console.log(JSON.stringify(req.session[WebAppStrategy.AUTH_CONTEXT]));
   if (req.session[WebAppStrategy.AUTH_CONTEXT]) {
     next();
   } else {
-    res.redirect(LOGIN_URL);
+    res.redirect(UI_BASE_URL + '/');
   }
 }
 
+// express app routes
 function routes(enrichmentPipeline, cloudantDAO) {
-  //CORS middleware
-  // var corsMiddleware = function(req, res, next) {
-  //   res.header('Access-Control-Allow-Origin', '*'); //replace localhost with actual host
-  //   res.header(
-  //     'Access-Control-Allow-Methods',
-  //     'OPTIONS, GET, PUT, PATCH, POST, DELETE'
-  //   );
-  //   res.header(
-  //     'Access-Control-Allow-Headers',
-  //     'Content-Type, X-Requested-With, Authorization'
-  //   );
-
-  //   next();
-  // };
-  // app.use(corsMiddleware);
-
-  // app.use('/api/*', isLoggedIn);
-
+  //checks first if user is logged in, then get tweets from cloudant
   app.use('/tweets', isLoggedIn, new TweeterRoute(enrichmentPipeline).router);
+
+  //parent route for analysis apis, it checks first if user is logged in, then redirects to the required analysis route
   app.use('/analysis', isLoggedIn, new AnalysisRoute(cloudantDAO).router);
 
+  //checks first if user is logged in,
+  // then gets sentiment of the tweets grouped by time from cloudant view
   app.use('/analysis/sentimentOverTime', isLoggedIn);
+
+  //checks first if user is logged in,
+  //then gets the average sentiment of the tweets from cloudant view
   app.use('/analysis/sentimentTrend', isLoggedIn);
+
+  //checks first if user is logged in,
+  //then gets sentiment summary from cloudant view
   app.use('/analysis/sentimentSummary', isLoggedIn);
+
+  //checks first if user is logged in,
+  //then gets nlu keywords summary from cloudant view
   app.use('/analysis/keywordsSummary', isLoggedIn);
+
+  //checks first if user is logged in,
+  //then gets nlu emotions grouped by time from cloudant view
   app.use('/analysis/emotionalToneOvertime', isLoggedIn);
+
+  //checks first if user is logged in,
+  //then gets tweets sorted by posted date from cloudant view
+
+  //checks first if user is logged in,
+  //then gets the tweets listener status
   app.use('/analysis/listByPostDate', isLoggedIn);
   app.use('/tweets/status', isLoggedIn);
-  // Protected area. If current user is not authenticated - redirect to the login widget will be returned.
-  // In case user is authenticated - a page with current user information will be returned.
+
+  // Explicit login endpoint. Will always redirect browser to login widget due to {forceLogin: true}.
+  // If forceLogin is set to false redirect to login widget will not occur of already authenticated users.
   app.get(
     LOGIN_URL,
     passport.authenticate(WebAppStrategy.STRATEGY_NAME, {
-      successRedirect: "http://localhost:4200/analysis",
+      successRedirect: UI_BASE_URL + '/',
       forceLogin: true
     })
   );
-// Explicit login endpoint. Will always redirect browser to login widget due to {forceLogin: true}.
-// If forceLogin is set to false redirect to login widget will not occur of already authenticated users.
-app.get(LOGIN_URL, passport.authenticate(WebAppStrategy.STRATEGY_NAME, {
-  forceLogin: true
-}));
+
+  // Explicit logout endpoint, logs out the user then redirects to the login page.
   app.get('/auth/logout', function(req, res, next) {
     WebAppStrategy.logout(req);
-    res.redirect(UI_BASE_URL);
+    res.redirect(UI_BASE_URL + '/');
   });
 
-  app.get('/token', function(req, res) {
-    //return the token data
-    res.render('token', {
-      tokens: JSON.stringify(req.session[WebAppStrategy.AUTH_CONTEXT])
-    });
-  });
-
+  //checks is the user is logged in, and returns the user session.
   app.get('/auth/logged', (req, res) => {
     let loggedInAs = {};
     if (req.session[WebAppStrategy.AUTH_CONTEXT]) {
@@ -240,20 +252,5 @@ app.get(LOGIN_URL, passport.authenticate(WebAppStrategy.STRATEGY_NAME, {
       allowAnonymousLogin: true
     })
   );
-
-  function storeRefreshTokenInCookie(req, res, next) {
-    if (
-      req.session[WebAppStrategy.AUTH_CONTEXT] &&
-      req.session[WebAppStrategy.AUTH_CONTEXT].refreshToken
-    ) {
-      const refreshToken =
-        req.session[WebAppStrategy.AUTH_CONTEXT].refreshToken;
-      /* An example of storing user's refresh-token in a cookie with expiration of a month */
-      res.cookie('refreshToken', refreshToken, {
-        maxAge: 1000 * 60 * 60 * 24 * 30 /* 30 days */
-      });
-    }
-    next();
-  }
 }
 export default app;

@@ -22,9 +22,8 @@ export class EnrichmentPipeline {
 
   nlu;
   toneAnalyzer;
-  //  conversation: watson.ConversationV1;
-  //  workspaceId: string;
 
+  //configuring nlu parameters to be sent to the nlu analyze api
   nluParams = {
     features: {
       emotion: {},
@@ -45,15 +44,24 @@ export class EnrichmentPipeline {
   toneParams = {};
 
   constructor() {
+    //init nlu apis
+    //if local environment, it reads credentials by default from .env file
+    // NATURAL_LANGUAGE_UNDERSTANDING_IAM_APIKEY and NATURAL_LANGUAGE_UNDERSTANDING_URL
     this.nlu = new watson.NaturalLanguageUnderstandingV1({
       version: '2018-03-16'
     });
 
+    //init tone analyzer api,
+    // if local environment it reads the credentials by default from .env file,
+    // TONE_ANALYZER_IAM_APIKEY and TONE_ANALYZER_URL
     this.toneAnalyzer = new watson.ToneAnalyzerV3({
       version: '2017-09-21'
     });
   }
 
+  //send the text through the enrichment pipeline to analyze it
+  // it extracts the keywords and sentiment from nlu enrichment
+  // then extracts the emotional tone from tone analuzer enrichment
   enrich(text) {
     return new Promise((resolve, reject) => {
       try {

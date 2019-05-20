@@ -107,45 +107,7 @@ function getLocalConfig() {
   return appIdConfig;
 }
 
-let tweeterListener;
-let cloudantDAO;
-
-const twitOptions = {};
-twitOptions.max = -1;
-
-// initialize enrichment pipeline to analyze the tweets
-const enrichmentPipeline = EnrichmentPipeline.getInstance();
-// app level initialization
-const cloudantOptions = {};
-cloudantOptions.maxBufferSize = config.max_buffer_size;
-
-// initialize cloudant dao to save the analyzed tweets
-cloudantDAO = CloudantDAO.getInstance(cloudantOptions, enrichmentPipeline);
-// setup the database once the enrichment pipeline has been initialized.
-cloudantDAO
-  .setupCloudant()
-  .then(() => {
-    tweeterListener = TweeterListener.getInstance(
-      twitOptions,
-      enrichmentPipeline
-    );
-    // Make sure first user ids are set if LISTEN_TO flag is set.
-    tweeterListener
-      .init()
-      .then(() => {
-        tweeterListenerStart();
-      })
-      .catch(err => {
-        logger.error(err);
-      });
-
-    // send the enrichmentPipeline and cloudantDAO instances to the routes function, to be used by the routes in it.
-    routes(enrichmentPipeline, cloudantDAO);
-  })
-  .catch(error => {
-    logger.error(error);
-    process.exit(1);
-  });
+// start listener
 
 //configure the security on the express app
 function configureSecurity() {
@@ -158,9 +120,49 @@ function configureSecurity() {
   }
 }
 
-//starts listening to new tweets
+// //starts listening to new tweets
+// function tweeterListenerStart() {}
+
 function tweeterListenerStart() {
-  tweeterListener.startListener();
+  let tweeterListener;
+  let cloudantDAO;
+
+  const twitOptions = {};
+  twitOptions.max = -1;
+
+  // initialize enrichment pipeline to analyze the tweets
+  const enrichmentPipeline = EnrichmentPipeline.getInstance();
+  // app level initialization
+  const cloudantOptions = {};
+  cloudantOptions.maxBufferSize = config.max_buffer_size;
+
+  // initialize cloudant dao to save the analyzed tweets
+  cloudantDAO = CloudantDAO.getInstance(cloudantOptions, enrichmentPipeline);
+  // setup the database once the enrichment pipeline has been initialized.
+  cloudantDAO
+    .setupCloudant()
+    .then(() => {
+      tweeterListener = TweeterListener.getInstance(
+        twitOptions,
+        enrichmentPipeline
+      );
+      // Make sure first user ids are set if LISTEN_TO flag is set.
+      tweeterListener
+        .init()
+        .then(() => {
+          tweeterListener.startListener();
+        })
+        .catch(err => {
+          logger.error(err);
+        });
+
+      // send the enrichmentPipeline and cloudantDAO instances to the routes function, to be used by the routes in it.
+      routes(enrichmentPipeline, cloudantDAO);
+    })
+    .catch(error => {
+      logger.error(error);
+      process.exit(1);
+    });
 }
 
 //middleware that checks the app Id cookie in request session,
@@ -182,75 +184,89 @@ function routes(enrichmentPipeline, cloudantDAO) {
 
   //parent route for analysis apis, it checks first if user is logged in, then redirects to the required analysis route
   app.use('/analysis', isLoggedIn, new AnalysisRoute(cloudantDAO).router);
-
-  //checks first if user is logged in,
-  // then gets sentiment of the tweets grouped by time from cloudant view
-  app.use('/analysis/sentimentOverTime', isLoggedIn);
-
-  //checks first if user is logged in,
-  //then gets the average sentiment of the tweets from cloudant view
-  app.use('/analysis/sentimentTrend', isLoggedIn);
-
-  //checks first if user is logged in,
-  //then gets sentiment summary from cloudant view
-  app.use('/analysis/sentimentSummary', isLoggedIn);
-
-  //checks first if user is logged in,
-  //then gets nlu keywords summary from cloudant view
-  app.use('/analysis/keywordsSummary', isLoggedIn);
-
-  //checks first if user is logged in,
-  //then gets nlu emotions grouped by time from cloudant view
-  app.use('/analysis/emotionalToneOvertime', isLoggedIn);
-
-  //checks first if user is logged in,
-  //then gets tweets sorted by posted date from cloudant view
-
-  //checks first if user is logged in,
-  //then gets the tweets listener status
-  app.use('/analysis/listByPostDate', isLoggedIn);
-  app.use('/tweets/status', isLoggedIn);
-
-  // Explicit login endpoint. Will always redirect browser to login widget due to {forceLogin: true}.
-  // If forceLogin is set to false redirect to login widget will not occur of already authenticated users.
-  app.get(
-    LOGIN_URL,
-    passport.authenticate(WebAppStrategy.STRATEGY_NAME, {
-      successRedirect: UI_BASE_URL + '/',
-      forceLogin: true
-    })
-  );
-
-  // Explicit logout endpoint, logs out the user then redirects to the login page.
-  app.get('/auth/logout', function(req, res, next) {
-    WebAppStrategy.logout(req);
-    res.redirect(UI_BASE_URL + '/');
-  });
-
-  //checks is the user is logged in, and returns the user session.
-  app.get('/auth/logged', (req, res) => {
-    let loggedInAs = {};
-    if (req.session[WebAppStrategy.AUTH_CONTEXT]) {
-      loggedInAs['name'] = req.user.name;
-      loggedInAs['email'] = req.user.email;
-    }
-
-    res.send({
-      logged: req.session[WebAppStrategy.AUTH_CONTEXT] ? true : false,
-      loggedInAs: loggedInAs
-    });
-  });
-
-  // Callback to finish the authorization process. Will retrieve access and identity tokens/
-  // from AppID service and redirect to either (in below order)
-  // 1. the original URL of the request that triggered authentication, as persisted in HTTP session under WebAppStrategy.ORIGINAL_URL key.
-  // 2. successRedirect as specified in passport.authenticate(name, {successRedirect: "...."}) invocation
-  // 3. application root ("/")
-  app.get(
-    CALLBACK_URL,
-    passport.authenticate(WebAppStrategy.STRATEGY_NAME, {
-      allowAnonymousLogin: true
-    })
-  );
 }
+
+//checks first if user is logged in,
+// then gets sentiment of the tweets grouped by time from cloudant view
+app.use('/analysis/sentimentOverTime', isLoggedIn);
+
+//checks first if user is logged in,
+//then gets the average sentiment of the tweets from cloudant view
+app.use('/analysis/sentimentTrend', isLoggedIn);
+
+//checks first if user is logged in,
+//then gets sentiment summary from cloudant view
+app.use('/analysis/sentimentSummary', isLoggedIn);
+
+//checks first if user is logged in,
+//then gets nlu keywords summary from cloudant view
+app.use('/analysis/keywordsSummary', isLoggedIn);
+
+//checks first if user is logged in,
+//then gets nlu emotions grouped by time from cloudant view
+app.use('/analysis/emotionalToneOvertime', isLoggedIn);
+
+//checks first if user is logged in,
+//then gets tweets sorted by posted date from cloudant view
+
+//checks first if user is logged in,
+//then gets the tweets listener status
+app.use('/analysis/listByPostDate', isLoggedIn);
+app.use('/tweets/status', isLoggedIn);
+
+// Explicit login endpoint. Will always redirect browser to login widget due to {forceLogin: true}.
+// If forceLogin is set to false redirect to login widget will not occur of already authenticated users.
+// app.get(
+//   LOGIN_URL,
+//   passport.authenticate(WebAppStrategy.STRATEGY_NAME, {
+//     successRedirect: UI_BASE_URL + '/',
+//     forceLogin: true
+//   })
+// );
+app.get(
+  LOGIN_URL,
+  passport.authenticate(WebAppStrategy.STRATEGY_NAME, {
+    forceLogin: true,
+    successRedirect: UI_BASE_URL + '/'
+  }),
+  function(req, res) {
+    //after user is logs in start listening to tweets
+    tweeterListenerStart();
+  }
+);
+
+// Explicit logout endpoint, logs out the user then redirects to the login page.
+app.get('/auth/logout', function(req, res, next) {
+  WebAppStrategy.logout(req);
+  res.redirect(UI_BASE_URL + '/');
+});
+
+//checks is the user is logged in, and returns the user session.
+app.get('/auth/logged', (req, res) => {
+  let loggedInAs = {};
+  if (req.session[WebAppStrategy.AUTH_CONTEXT]) {
+    loggedInAs['name'] = req.user.name;
+    loggedInAs['email'] = req.user.email;
+
+    //if user is logged in start listening to tweets
+    tweeterListenerStart();
+  }
+
+  res.send({
+    logged: req.session[WebAppStrategy.AUTH_CONTEXT] ? true : false,
+    loggedInAs: loggedInAs
+  });
+});
+
+// Callback to finish the authorization process. Will retrieve access and identity tokens/
+// from AppID service and redirect to either (in below order)
+// 1. the original URL of the request that triggered authentication, as persisted in HTTP session under WebAppStrategy.ORIGINAL_URL key.
+// 2. successRedirect as specified in passport.authenticate(name, {successRedirect: "...."}) invocation
+// 3. application root ("/")
+app.get(
+  CALLBACK_URL,
+  passport.authenticate(WebAppStrategy.STRATEGY_NAME, {
+    allowAnonymousLogin: true
+  })
+);
 export default app;

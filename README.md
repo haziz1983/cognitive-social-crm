@@ -4,12 +4,13 @@ _Read this in other languages: [日本語](README-ja.md)._
 
 # Monitor Twitter feeds to better understand customer sentiment using Watson Assistant, Tone Analyzer, and Natural Language Understanding
 
-In this code pattern, our server application subscribes to a Twitter feed as configured by the user. Each tweet received will be analyzed for emotional tone and sentiment, and the intent of the tweet will be determined by the Watson Assistant service. All data is stored in a Cloudant database, with the opportunity to store historical data as well. The resulting analysis is presented in a Web UI as a series of graphs and charts.
+In this code pattern, our server application subscribes to a Twitter feed as configured by the user. Each tweet received will be analyzed for emotional tone and sentiment. All data is stored in a Cloudant database, with the opportunity to store historical data as well. The resulting analysis is presented in a Web UI as a series of graphs and charts.
 
 When the reader has completed this code pattern, they will understand how to:
 
 - Run an application that monitors a Twitter feed.
-- Send the tweets to Watson Tone Analyzer, Assistant, and Natural Language Understanding for processing and analysis.
+- Secure the application using App ID to secure the data.
+- Send the tweets to Watson Tone Analyzer and Natural Language Understanding for processing and analysis.
 - Store the information in a Cloudant database.
 - Present the information in a Angular and nodejs web UI.
 - Capture and analyze social media for a specified Twitter handle or hashtag and let Watson analyze the content.
@@ -18,17 +19,17 @@ When the reader has completed this code pattern, they will understand how to:
 
 ![](doc/source/images/architecture.png)
 
-1. Tweets are pushed out by Twitter.
-2. The Cognitive Social CRM app processes the tweet.
-3. The Watson Tone Analyzer Service performs analysis of sentiment and emotional tone.
-4. The Watson Natural Language Understanding Service pulls out keywords and entities.
-5. The Watson Assistant Service extracts the intents (verbs) from the tweets.
+1. User logs in using his Google account.
+2. Tweets are pushed out by Twitter.
+3. The Cognitive Social CRM app processes the tweet.
+4. The Watson Tone Analyzer Service performs analysis of sentiment and emotional tone.
+5. The Watson Natural Language Understanding Service pulls out keywords and entities.
 6. Tweets and metadata are stored in Cloudant
 7. The Web UI displays charts and graphs as well as the tweets.
 
 ## Included components
 
-- [Watson Assistant](https://www.ibm.com/cloud/watson-assistant/): Watson Assistant is a robust platform that allows developers and non-technical users to collaborate on building conversational AI solution.
+- [App ID](https://www.ibm.com/cloud/app-id): Easily add authentication, secure back ends and APIs, and manage user-specific data for your mobile and web apps.
 - [Watson Tone Analyzer](https://www.ibm.com/watson/services/tone-analyzer): Uses linguistic analysis to detect communication tones in written text.
 - [Watson Natural Language Understanding](https://www.ibm.com/watson/services/natural-language-understanding): Natural language processing for advanced text analysis.
 - [IBM Cloudant](https://www.ibm.com/cloud/cloudant): A managed NoSQL database service that moves application data closer to all the places it needs to be — for uninterrupted data access, offline or on.
@@ -40,17 +41,18 @@ When the reader has completed this code pattern, they will understand how to:
 - [Databases](https://en.wikipedia.org/wiki/IBM_Information_Management_System#.22Full_Function.22_databases): Repository for storing and managing collections of data.
 - [Angular](https://angular.io/): A framework to build UI for mobile and desktop application.
 - [Node.js](https://nodejs.org/): An open-source JavaScript run-time environment for executing server-side JavaScript code.
-- [Express](https://expressjs.com/): Fast, unopinionated, minimalist web framework for Node.js
+- [Express](https://expressjs.com/): Fast, unopinionated, minimalist web framework for Node.js.
+- [Passport](http://www.passportjs.org/): Simple, unobtrusive authentication for Node.js.
 
 # Steps
 
-The setup is done in 3 primary steps. You will download the code, setup the application and then deploy the code to IBM Cloud. If you would like to run the code locally, there will be one more step to configure the credentials locally.
+The setup is done in 3 primary steps. You will download the code, setup the application and then deploy the code to IBM Cloud using IBM Cloud Toolchains. If you would like to run the code locally, there will be one more step to configure the credentials locally.
 
 1. [Clone the repo](#1-clone-the-repo)
 2. [Install Dependencies](#2-install-dependencies)
 3. [Twitter Requirements](#3-twitter-requirements)
-4. [Create Watson services with IBM Cloud](#4-create-watson-services-with-ibm-cloud)
-5. [Import the Assistant workspace](#5-import-the-assistant-workspace)
+4. [Google Authentication Requirements](#4-google-requirements)
+5. [Create Watson services with IBM Cloud](#5-create-watson-services-with-ibm-cloud)
 6. [Configure credentials](#6-configure-credentials)
 7. [Run the application](#7-run-the-application)
 
@@ -68,19 +70,17 @@ $ cd cognitive-social-crm
 The application requires the following software to be installed locally.
 
 1. [Node (6.9+)](https://nodejs.org): Application runtime environment, download and install the package.
-1. [Angular CLI (6.1.1)](https://www.npmjs.com/package/@angular/cli): A CLI for Angular applications, installed with: `npm install -g @angular/cli`.
-1. [Angular (6.1.0)](https://angular.io): Angular will be added as a dependency of client in `package.json` when setting up client using `Angular cli`.
-1. [Express (4.16.3)](https://expressjs.com): Express will be added as a dependency in `package.json` for server.
+2. [Angular CLI (6.1.1)](https://www.npmjs.com/package/@angular/cli): A CLI for Angular applications, installed with: `npm install -g @angular/cli`.
+3. [Angular (6.1.0)](https://angular.io): Angular will be added as a dependency of client in `package.json` when setting up client using `Angular cli`.
+4. [Express (4.16.3)](https://expressjs.com): Express will be added as a dependency in `package.json` for server.
 
 > If you have Angular CLI already installed. Please read the upgrade instructions for Angular CLI when you upgrade the software.
 
-Run the following command, from the application folder, to install both the client and server dependencies.
+Using Git Bash, run the following command, from the application folder, to install both the client and server dependencies.
 
 ```
-$ npm run app-install
+$ npm run install
 ```
-
-> NOTE: Currently Windows OS is not supported
 
 ### 3. Twitter requirements
 
@@ -92,7 +92,15 @@ The Twitter account will be used as the account that receives the messages from 
 - Select the Keys and Access Tokens tab and generate a Consumer Key and Secret.
   Keep this page open as you will need to use these tokens into setup procedure in the application later on.
 
-### 4. Create Watson services with IBM Cloud
+### 4. Google Authentication Requirements
+
+To use Google Authentication for users to login using their google accounts. It is required to have a valid gmail to be able to configure the App ID to use google for authentication.
+
+- You can create a gmail account on [Gmail](https://www.gmail.com).
+- Once you have the gmail account created and verified, log in to [Google Developers Console](https://console.developers.google.com/) and create new project.
+-
+
+### 5. Create Watson services with IBM Cloud
 
 Either Setup the IBM Cloud Deployment or Setup Local Deployment.
 
@@ -103,33 +111,14 @@ Either Setup the IBM Cloud Deployment or Setup Local Deployment.
 If you do not already have a IBM Cloud account, [signup for IBM Cloud](https://cloud.ibm.com/registration).
 Create the following services:
 
-- [**Watson Assistant**](https://cloud.ibm.com/catalog/services/watson-assistant-formerly-conversation)
+- [**App ID**](https://cloud.ibm.com/catalog/services/app-id)
 - [**Watson Tone Analyzer**](https://cloud.ibm.com/catalog/services/tone-analyzer)
 - [**Watson Natural Language Understanding**](https://cloud.ibm.com/catalog/services/natural-language-understanding)
 - [**IBM Cloudant DB**](https://cloud.ibm.com/catalog/services/cloudant)
 
->NOTE: When provisioning Cloudant, for `Available authentication methods` choose `Use both legacy credentials and IAM`
+> NOTE: When provisioning Cloudant, for `Available authentication methods` choose `Use both legacy credentials and IAM`
 
 ![Cloudant](https://raw.githubusercontent.com/IBM/watson-online-store/master/doc/source/images/cloudantChooseLegacy.png)
-
-### 5. Import the Watson Assistant skill
-
-- Find the Assistant service in your IBM Cloud Dashboard.
-- Click on the service and then click on `Launch tool`.
-- Go to the `Skills` tab.
-- Click `Create new`
-- Click the `Import skill` tab.
-- Click `Choose JSON file`, go to your cloned repo dir, and `Open` the workspace.json file in [`data/assistant/workspace-social-crm-airline-classification.json`](data/assistant/workspace-social-crm-airline-classification.json).
-- Select `Everything` and click `Import`.
-
-To find the `WORKSPACE_ID` for Watson Assistant:
-
-- Go back to the `Skills` tab.
-- Click on the three dots in the upper right-hand corner of the **cognitive-social-crm** card and select `View API Details`.
-- Copy the `Workspace ID` GUID.
-
-_Optionally_, to view the Assistant dialog, click on the skill and choose the
-`Dialog` tab. Here's a snippet of the dialog:
 
 ### 6. Configure credentials
 

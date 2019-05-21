@@ -2,7 +2,7 @@ _Read this in other languages: [日本語](README-ja.md)._
 
 [![Build Status](https://travis-ci.org/IBM/cognitive-social-crm.svg?branch=master)](https://travis-ci.org/IBM/cognitive-social-crm)
 
-# Monitor Twitter feeds to better understand customer sentiment using Watson Assistant, Tone Analyzer, and Natural Language Understanding
+# Monitor Twitter feeds to better understand customer sentiment using Tone Analyzer, and Natural Language Understanding
 
 In this code pattern, our server application subscribes to a Twitter feed as configured by the user. Each tweet received will be analyzed for emotional tone and sentiment. All data is stored in a Cloudant database, with the opportunity to store historical data as well. The resulting analysis is presented in a Web UI as a series of graphs and charts.
 
@@ -20,7 +20,7 @@ When the reader has completed this code pattern, they will understand how to:
 ![](doc/source/images/architecture.png)
 
 1. User logs in using his Google account.
-2. Tweets are pushed out by Twitter.
+2. Tweets are pushed out by Twitter using stream Twitter API.
 3. The Cognitive Social CRM app processes the tweet.
 4. The Watson Tone Analyzer Service performs analysis of sentiment and emotional tone.
 5. The Watson Natural Language Understanding Service pulls out keywords and entities.
@@ -51,8 +51,8 @@ The setup is done in 3 primary steps. You will download the code, setup the appl
 1. [Clone the repo](#1-clone-the-repo)
 2. [Install Dependencies](#2-install-dependencies)
 3. [Twitter Requirements](#3-twitter-requirements)
-4. [Google Authentication Requirements](#4-google-requirements)
-5. [Create Watson services with IBM Cloud](#5-create-watson-services-with-ibm-cloud)
+4. [Create IBM Cloud services](#4-create-ibm-cloud-services)
+5. [Google Authentication Requirements](#5-google-authentication-requirements)
 6. [Configure credentials](#6-configure-credentials)
 7. [Run the application](#7-run-the-application)
 
@@ -92,43 +92,79 @@ The Twitter account will be used as the account that receives the messages from 
 - Select the Keys and Access Tokens tab and generate a Consumer Key and Secret.
   Keep this page open as you will need to use these tokens into setup procedure in the application later on.
 
-### 4. Google Authentication Requirements
+> NOTE: In case you did not configure your application with Twitter APIs, there are sample tweets that the application will use if no twitter API is configured so you can test your application.
 
-To use Google Authentication for users to login using their google accounts. It is required to have a valid gmail to be able to configure the App ID to use google for authentication.
+### 4. Create IBM Cloud services
 
-- You can create a gmail account on [Gmail](https://www.gmail.com).
-- Once you have the gmail account created and verified, log in to [Google Developers Console](https://console.developers.google.com/) and create new project.
--
+You will create in this section: App ID, Watson Tone Aanalyzer, Watson Natural Language Understanding and IBM Cloudant services on IBM Cloud.
 
-### 5. Create Watson services with IBM Cloud
+1. Login to [IBM Cloud](https://cloud.ibm.com/)
+2. Create IBM Cloud services:
 
-Either Setup the IBM Cloud Deployment or Setup Local Deployment.
+#### App ID:
 
-#### Setup local Deployment
+1. To create App ID instance on IBM Cloud, follow the steps in `Cloud Application Development Course Exercise 4 Part 1`.
+2. After the App ID instance is created, Navigate to `Manage Authentication` Tab, disable `Facebook` and `Cloud Directory`.
+   > This is because you will be using Google only as an Identity provider.
+3. Create service alias for App ID:
 
-> Explanation: You will create the IBM Cloud services and configure them to use on a locally running server app.
+   - a. Login to IBM Cloud by running the following command:
 
-If you do not already have a IBM Cloud account, [signup for IBM Cloud](https://cloud.ibm.com/registration).
-Create the following services:
+     ```
+     $ ibmcloud login
+     ```
 
-- [**App ID**](https://cloud.ibm.com/catalog/services/app-id)
-- [**Watson Tone Analyzer**](https://cloud.ibm.com/catalog/services/tone-analyzer)
-- [**Watson Natural Language Understanding**](https://cloud.ibm.com/catalog/services/natural-language-understanding)
-- [**IBM Cloudant DB**](https://cloud.ibm.com/catalog/services/cloudant)
+   - b. Select the region, where you have created the App ID instance.
+   - c. Target a Cloud Foundry organization and space to select the Cloud Foundry API endpoint, organization, and space by running the following command:
+
+     ```
+     $ ibmcloud target --cf-api <CF API ENDPOINT> -o <ORG> -s <SPACE>
+     ```
+
+     where <CF API ENDPOINT> is the Endpoint you will connect to , you can find the whole list here: [https://cloud.ibm.com/docs/cli/reference/ibmcloud?topic=cloud-cli-cf#cf_login], ORG is by default set to your email, SPACE is by default set to `dev`.
+
+   - 4. Open the [manifest.yml](manifest.yml) file from the code, copy the App Id alias name; which is: "App ID -s1-alias"
+        Run the following command:
+
+        ```
+        $ ibmcloud resource service-alias-create "appIDInstanceName-alias" --instance-name "appIDInstanceName" -s {{space}}
+        ```
+
+        Replace `appIDInstanceName-alias` with the alias name from manifest.yml, and `appIDInstanceName` with the name of the App ID instance you have created on IBM Cloud, and `space` with the space you logged in.
+
+#### Watson Tone Analyzer
+
+- Create Watson Tone Analyzer: [**Watson Tone Analyzer**](https://cloud.ibm.com/catalog/services/tone-analyzer)
+
+#### Watson Natural Language Understanding
+
+- Create Watson Natural Language Understanding: [**Watson Natural Language Understanding**](https://cloud.ibm.com/catalog/services/natural-language-understanding)
+
+#### IBM Cloudant
+
+- Create IBM Cloudant: [**IBM Cloudant**](https://cloud.ibm.com/catalog/services/cloudant)
 
 > NOTE: When provisioning Cloudant, for `Available authentication methods` choose `Use both legacy credentials and IAM`
 
 ![Cloudant](https://raw.githubusercontent.com/IBM/watson-online-store/master/doc/source/images/cloudantChooseLegacy.png)
 
+### 5. Google Authentication Requirements
+
+To use Google Autheantication for users to login. You will need to configure your App ID instance to use Google as its identity provider.
+
+> NOTE: It is required to have a valid gmail to be able to configure the App ID to use google for authentication. - You can create a gmail account on [Gmail](https://www.gmail.com).
+
+- Go to the [App ID Documentation](https://cloud.ibm.com/docs/services/appid?topic=appid-social#google) and follow the steps to configure App ID to use Google as identity provider.
+
 ### 6. Configure credentials
 
-The `env.sample` file should be copied to `.env` before the application is executed on IBM Cloud or locally. The `.env` file resides on the `server` folder as it is required by the server code.
+The `env.sample` file in the `server` folder should be copied to `.env` before the application is executed on IBM Cloud or locally. The `.env` file chould also reside on the `server` folder as it is required by the server code.
 
 > The `.env` file is where all the parameters like credentials, log settings and other constants required by this application is kept.
 
 #### Configure service credentials
 
-The credentials for IBM Cloud services (Tone Analyzer, Natural Language Understanding, and Cloudant), can be found in the `Services` menu in IBM Cloud, by selecting the `Service Credentials` option for each service.
+The credentials for IBM Cloud services (App ID, Tone Analyzer, Natural Language Understanding, and Cloudant), can be found in the `Services` menu in IBM Cloud, by selecting the `Service Credentials` option for each service.
 
 > NOTE: When provisioning Cloudant, for `Available authentication methods` choose `Use both legacy credentials and IAM`
 
@@ -167,23 +203,23 @@ NATURAL_LANGUAGE_UNDERSTANDING_URL=<use natural language understanding URL>
 TONE_ANALYZER_IAM_APIKEY=<use tone analyzer iam API key>
 TONE_ANALYZER_URL=<use tone analyzer url>
 
-## Un-comment and use either username+password or IAM apikey.
-# ASSISTANT_USERNAME=<use assistant username>
-# ASSISTANT_PASSWORD=<use assistant password>
-ASSISTANT_IAM_APIKEY=<use assistant iam apikey>
-ASSISTANT_URL=<use assistant url>
-
-ASSISTANT_CLASSIFICATION_WORKSPACE_ID=<use assistant workspace id>
-
 # Configuration from you twitter account
 TWITTER_CONSUMER_KEY=<use twitter consumer key>
 TWITTER_CONSUMER_SECRET=<use twitter consumer secret>
 TWITTER_ACCESS_TOKEN=<use twitter access token>
 TWITTER_ACCESS_SECRET=<use twitter access secret>
-#TWITTER_LISTEN_FOR=<use twitter hashtag or keyword or @tag>
 TWITTER_LISTEN_TO=<use your @tag>
 TWITTER_FILTER_CONTAINING=<use keyword you want to filter in tweets>
 TWITTER_PROCESS_RETWEETS=true
+
+# App ID credentials
+APP_ID_CLIENT_ID=<use app id client id>
+APP_ID_OAUTH_SERVER_URL=<use app id server url>
+APP_ID_PROFILE_URL=<use app id profile url>
+APP_ID_SECRET=<use app id secret>
+APP_ID_TENANT_ID=<use app id tenant id>
+APP_ID_VERSION=<use app id verion>
+APP_ID_SERVICE_ENDPOINT=<use app id service endpoint>
 
 # App level configuration
 LOGGING=true
@@ -200,17 +236,21 @@ Either `Run the app on IBM Cloud` or `Run the app locally`.
 
 1. Compile the Angular client code and Express server code using the following command. This creates a `dist` folder in your project root directory and copies the compile code and necessary files to be deployed to IBM cloud.
 
+Open Git bash, and run the following commands:
+
 ```
 $ npm run build
 ```
 
-2. Connect to IBM Cloud in the command line tool and follow the prompts to log in
+2. If your git bash session is not already logged in to IBM Cloud, then login using the following commands, as explained before:
 
 ```
-$ ibmcloud cf login -a https://api.ng.bluemix.net
+$ ibmcloud login
 ```
 
-> Make sure you set the `target` and `space` correctly using `ibmcloud target -o <target> -s <space>`
+```
+$ ibmcloud target --cf-api <CF API ENDPOINT> -o <ORG> -s <SPACE>
+```
 
 3. Push the app to IBM Cloud.
 
@@ -250,16 +290,10 @@ as well as Classification of live tweets, Sentiment over time, Emotional Tone ov
 
 # Links
 
-- [Watson Assistant](https://www.ibm.com/cloud/watson-assistant/)
+- [App ID](https://www.ibm.com/cloud/app-id/)
 - [Watson Tone Analyzer](https://www.ibm.com/watson/services/tone-analyzer/)
 - [Watson Natural Language Understanding](https://www.ibm.com/watson/services/natural-language-understanding/)
 - [IBM Cloudant db](https://www.ibm.com/cloud/cloudant)
-
-# Learn more
-
-- **Artificial Intelligence Code Patterns**: Enjoyed this Code Pattern? Check out our other [AI Code Patterns](https://developer.ibm.com/technologies/artificial-intelligence/).
-- **AI and Data Code Pattern Playlist**: Bookmark our [playlist](https://www.youtube.com/playlist?list=PLzUbsvIyrNfknNewObx5N7uGZ5FKH0Fde) with all of our Code Pattern videos
-- **With Watson**: Want to take your Watson app to the next level? Looking to utilize Watson Brand assets? [Join the With Watson program](https://www.ibm.com/watson/with-watson/) to leverage exclusive brand, marketing, and tech resources to amplify and accelerate your Watson embedded commercial solution.
 
 ## License
 

@@ -29,14 +29,13 @@ let config = {
   access_token: process.env.TWITTER_ACCESS_TOKEN,
   access_token_secret: process.env.TWITTER_ACCESS_SECRET,
   max_buffer_size: Number(process.env.MAX_BUFFER_SIZE),
-  appIdClientId: 'a069d077-0f1d-47ff-a1e5-890631a51a7f',
-  appIdOauthServerUrl:
-    'https://us-south.appid.cloud.ibm.com/oauth/v4/8c53f71d-04a3-40cb-b279-42ba5645f362',
-  appIdProfilesUrl: 'https://us-south.appid.cloud.ibm.com',
-  appIdSecret: 'NGNjMTVhZTktZjRjYy00ODVkLWJkMDAtZDQ1ZDhhMmI0ZTdk',
-  appIdTenantId: '8c53f71d-04a3-40cb-b279-42ba5645f362',
-  appIdVersion: 4,
-  appidServiceEndpoint: 'https://us-south.appid.cloud.ibm.com'
+  appIdClientId: process.env.APP_ID_CLIENT_ID,
+  appIdOauthServerUrl: process.env.APP_ID_OAUTH_SERVER_URL,
+  appIdProfilesUrl: process.env.APP_ID_PROFILE_URL,
+  appIdSecret: process.env.APP_ID_SECRET,
+  appIdTenantId: process.env.APP_ID_TENANT_ID,
+  appIdVersion: process.env.APP_ID_VERSION,
+  appidServiceEndpoint: process.env.APP_ID_SERVICE_ENDPOINT
 };
 
 // merge environment specific config to default config.
